@@ -3,6 +3,8 @@ peda
 
 PEDA - Python Exploit Development Assistance for GDB
 
+***NOTE***: This version has been extended by Zach Riggle to add some features and give dual-compatibility with Python2 and Python2.
+
 ## Key Features:
 * Enhance the display of gdb: colorize and display disassembly codes, registers, memory information during debugging.
 * Add commands to support debugging and exploit development (for a full list of commands use `peda help`):
@@ -29,7 +31,7 @@ PEDA - Python Exploit Development Assistance for GDB
 
 ## Installation
 
-    git clone https://github.com/longld/peda.git ~/peda
+    git clone https://github.com/zachriggle/peda.git ~/peda
     echo "source ~/peda/peda.py" >> ~/.gdbinit
     echo "DONE! debug your program with gdb and enjoy"
 
