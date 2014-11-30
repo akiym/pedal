@@ -3,7 +3,7 @@ peda
 
 PEDA - Python Exploit Development Assistance for GDB
 
-***NOTE***: This version has been extended by Zach Riggle to add some features and give dual-compatibility with Python2 and Python2.
+***NOTE***: This version has been extended by Zach Riggle to add some features and give dual-compatibility with Python2 and Python3.
 
 ## Key Features:
 * Enhance the display of gdb: colorize and display disassembly codes, registers, memory information during debugging.
