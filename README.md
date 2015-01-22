@@ -48,8 +48,4 @@ These are the standard features of PEDA:
     echo "DONE! debug your program with gdb and enjoy"
 
 ## Screenshot
-![start](http://i.imgur.com/P1BF5mp.png)
-
-![pattern arg](http://i.imgur.com/W97OWRC.png)
-
-![patts](http://i.imgur.com/Br24IpC.png)
+![start](http://i.imgur.com/f22ZRro.png)
