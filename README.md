@@ -3,9 +3,12 @@ peda
 
 PEDA - Python Exploit Development Assistance for GDB
 
-***NOTE***: This version has been extended by Zach Riggle to add some features and give dual-compatibility with Python2 and Python3.
+## Screenshot
+![start](http://i.imgur.com/f22ZRro.png)
 
 ## Enhancements:
+
+ This version has been extended by Zach Riggle to add some features and give dual-compatibility with Python2 and Python3.
 
 * Python2 and Python3 compatibility
 * Line width wrapping on banners
@@ -46,6 +49,3 @@ These are the standard features of PEDA:
     git clone https://github.com/zachriggle/peda.git ~/peda
     echo "source ~/peda/peda.py" >> ~/.gdbinit
     echo "DONE! debug your program with gdb and enjoy"
-
-## Screenshot
-![start](http://i.imgur.com/f22ZRro.png)
