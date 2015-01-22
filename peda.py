@@ -1831,7 +1831,6 @@ class PEDA(object):
             - list of found result: (address(Int), hex encoded value(String))
 
         """
-
         result = []
         if end < start:
             (start, end) = (end, start)
@@ -1853,7 +1852,8 @@ class PEDA(object):
         if escape != 0:
             search = re.escape(search)
 
-        search = bytes(search)
+        if isinstance(search, str):
+            search = bytes(search)
 
         try:
             p = re.compile(search)
