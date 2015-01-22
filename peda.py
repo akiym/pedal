@@ -1540,6 +1540,26 @@ class PEDA(object):
             return False
 
     @memoized
+    def is_stack(self, address, maps=None):
+        """
+        Check if an address is in the stack
+        """
+        vmrange = self.get_vmrange(address, maps)
+        if vmrange and vmrange[3] == '[stack]':
+            return True
+        return False
+
+    @memoized
+    def is_heap(self, address, maps=None):
+        """
+        Check if an address is in the stack
+        """
+        vmrange = self.get_vmrange(address, maps)
+        if vmrange and vmrange[3] == '[heap]':
+            return True
+        return False
+
+    @memoized
     def is_writable(self, address, maps=None):
         """
         Check if an address is writable
@@ -2025,8 +2045,16 @@ class PEDA(object):
         else:
             (_, _, _, mapname) = self.get_vmrange(value)
 
-        # check for writable first so rwxp mem will be treated as data
-        if self.is_writable(value): # writable data address
+
+        if self.is_stack(value):
+            out = examine_data(value, bits)
+            if out:
+                result = (to_hex(value), "stack", out.split(":", 1)[1].strip())
+        elif self.is_heap(value):
+            out = examine_data(value, bits)
+            if out:
+                result = (to_hex(value), "heap", out.split(":", 1)[1].strip())
+        elif self.is_writable(value): # writable data address
             out = examine_data(value, bits)
             if out:
                 result = (to_hex(value), "data", out.split(":", 1)[1].strip())
@@ -4316,7 +4344,11 @@ class PEDACmd(object):
         if "stack" in opt or "SIGSEGV" in status:
             self.context_stack(count)
         msg(separator(), "blue")
-        msg("Legend: %s, %s, %s, value" % (red("code"), blue("data"), green("rodata")))
+
+        colors = []
+        for datatype in ('stack', 'code','data', 'heap', 'rodata','value'):
+            colors.append(format_address(datatype, datatype))
+        msg("Legend: %s" % ', '.join(colors))
 
         # display stopped reason
         if "SIG" in status:

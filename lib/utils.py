@@ -460,9 +460,20 @@ def format_address(addr, type):
         "data": "blue",
         "code": "red",
         "rodata": "green",
+        "stack": "purple",
+        "heap": "purple",
         "value": None
     }
-    return colorize(addr, colorcodes[type])
+    colorattr = {
+        "data": None,
+        "code": None,
+        "rodata": None,
+        "stack": None,
+        "heap": "light",
+        "value": None
+    }
+
+    return colorize(addr, colorcodes[type], colorattr[type])
 
 @memoized
 def format_reference_chain(chain):
