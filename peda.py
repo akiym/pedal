@@ -1385,6 +1385,7 @@ class PEDA(object):
     #########################
     #   Memory Operations   #
     #########################
+    @memoized
     def get_vmmap(self, name=None):
         """
         Get virtual memory mapping address ranges of debugged process
