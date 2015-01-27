@@ -1385,7 +1385,6 @@ class PEDA(object):
     #########################
     #   Memory Operations   #
     #########################
-    @memoized
     def get_vmmap(self, name=None):
         """
         Get virtual memory mapping address ranges of debugged process
@@ -1484,8 +1483,8 @@ class PEDA(object):
         rmt  = self.is_target_remote()
         maps = []
         try:
-            if   os == "FreeBSD": maps = _get_allmaps_freebsd(pid, rmt)
-            elif os == "Linux" :   maps = _get_allmaps_linux(pid, rmt)
+            if   os == "FreeBSD": maps = _get_allmaps_freebsd(pid, tid, rmt)
+            elif os == "Linux" :   maps = _get_allmaps_linux(pid, tid, rmt)
         except Exception as e:
             if config.Option.get("debug") == "on":
                 msg("Exception: %s" %e)
