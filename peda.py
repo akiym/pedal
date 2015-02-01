@@ -2072,7 +2072,7 @@ class PEDA(object):
                 result = (to_hex(value), "data", out.split(":", 1)[1].strip())
 
         elif self.is_executable(value): # code/rodata address
-            if self.is_address(value, binmap):
+            if self.is_address(value, binmap) and None is gdb.solib_name(value):
                 headers = self.elfheader()
             else:
                 headers = self.elfheader_solib(mapname)
@@ -2091,7 +2091,7 @@ class PEDA(object):
                             result = (to_hex(value), "rodata", out.split(":", 1)[1].strip())
                         break
 
-                if result[0] is None: # not fall to any header section
+                else:
                     out = examine_data(value, bits)
                     result = (to_hex(value), "rodata", out.split(":", 1)[1].strip())
 
