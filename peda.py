@@ -3010,6 +3010,24 @@ class PEDACmd(object):
         else:
             return pid
 
+    def _eX(self, where, bytes, size):
+        addr  = to_int(where)
+        for i, hex in enumerate(bytes):
+            bytes[i] = decode(hex, 'hex').ljust(size,b'\x00')
+        bytes = b''.join(bytes)
+        gdb.selected_inferior().write_memory(addr, bytes)
+
+    def eb(self, where, *bytes):
+        """Edits bytes"""
+        self._eX(where, bytes, 1)
+
+    def ew(self, where, *bytes):
+        """Edits shorts"""
+        self._eX(where, bytes, 2)
+
+    def ed(self, where, *bytes):
+        self._eX(where, bytes, 4)
+
     def reload(self, *arg):
         """
         Reload PEDA sources, keep current options untouch
@@ -3052,8 +3070,11 @@ class PEDACmd(object):
             i = 0
             for cmd in self.commands:
                 if cmd.startswith("_"): continue # skip internal use commands
-                func = getattr(self, cmd)
-                helptext += "%s -- %s\n" % (cmd, green(trim(func.__doc__.strip("\n").splitlines()[0])))
+                func = getattr(self.__class__, cmd)
+                docstring = func.__doc__
+                if not docstring:
+                    func.__doc__ = docstring = 'No help for %s' % cmd
+                helptext += "%s -- %s\n" % (cmd, green(trim(docstring.strip("\n").splitlines()[0])))
             helptext += "\nType \"help\" followed by subcommand for full documentation."
         else:
             cmd = arg[0]
@@ -4717,9 +4738,12 @@ class PEDACmd(object):
         #find any registers pointing to an address
         for chain in result:
              regslist = ""
+             addr     = to_int(chain[0][0])
+             size     = gdb.lookup_type('void').pointer().sizeof
              for reg in regs:
-                if regs[reg] == to_int(chain[0][0]):
-                   regslist += reg + " "
+                regval = regs[reg]
+                if regval in range(addr, addr+size):
+                    regslist += '%s%s ' % (reg, addr-regval or '')
              s = len(regslist)
              if s > regsColumnLen:
                 regsColumnLen = s
