@@ -4742,8 +4742,7 @@ class PEDACmd(object):
         # address.
         #
         regs = peda.getregs()
-        syms = {'argc': '__libc_argc',
-                'argv': '__libc_argv',
+        syms = {'argv': '__libc_argv',
                 'envp': '__environ',
                 'progname': '__progname'}
 
