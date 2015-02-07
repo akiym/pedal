@@ -3012,6 +3012,7 @@ class PEDACmd(object):
 
     def _eX(self, where, bytes, size):
         addr  = to_int(where)
+        bytes = list(bytes)
         for i, hex in enumerate(bytes):
             bytes[i] = decode(hex, 'hex').ljust(size,b'\x00')
         bytes = b''.join(bytes)
@@ -3327,6 +3328,9 @@ class PEDACmd(object):
             MYNAME address count
             MYNAME address /count (dump "count" lines, 16-bytes each)
         """
+        arg = list(arg)
+        if len(arg) == 1: arg.append('64')
+
         (address, count) = normalize_argv(arg, 2)
         linelen = 16 # display 16-bytes per line
 
