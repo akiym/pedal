@@ -1405,17 +1405,27 @@ class PEDA(object):
                 return None
             headers = self.elfheader()
             binmap = []
-            hlist = [x for x in list(headers.items()) if x[1][2] == 'code']
-            hlist = sorted(hlist, key=lambda x:x[1][0])
-            binmap += [(hlist[0][1][0], hlist[-1][1][1], "rx-p", name)]
 
-            hlist = [x for x in list(headers.items()) if x[1][2] == 'rodata']
-            hlist = sorted(hlist, key=lambda x:x[1][0])
-            binmap += [(hlist[0][1][0], hlist[-1][1][1], "r--p", name)]
+            try:
+                hlist = [x for x in list(headers.items()) if x[1][2] == 'code']
+                hlist = sorted(hlist, key=lambda x:x[1][0])
+                binmap += [(hlist[0][1][0], hlist[-1][1][1], "rx-p", name)]
+            except Exception:
+                pass
 
-            hlist = [x for x in list(headers.items()) if x[1][2] == 'data']
-            hlist = sorted(hlist, key=lambda x:x[1][0])
-            binmap += [(hlist[0][1][0], hlist[-1][1][1], "rw-p", name)]
+            try:
+                hlist = [x for x in list(headers.items()) if x[1][2] == 'rodata']
+                hlist = sorted(hlist, key=lambda x:x[1][0])
+                binmap += [(hlist[0][1][0], hlist[-1][1][1], "r--p", name)]
+            except Exception:
+                pass
+
+            try:
+                hlist = [x for x in list(headers.items()) if x[1][2] == 'data']
+                hlist = sorted(hlist, key=lambda x:x[1][0])
+                binmap += [(hlist[0][1][0], hlist[-1][1][1], "rw-p", name)]
+            except Exception:
+                pass
 
             return binmap
 
@@ -3926,7 +3936,7 @@ class PEDACmd(object):
         if not started: # try ELF entry point or just "run" as the last resort
             elf_entry = peda.elfentry()
             if elf_entry:
-                out = peda.execute_redirect("tbreak %s" % elf_entry)
+                out = peda.execute_redirect("tbreak *%s" % elf_entry)
 
             peda.execute("run")
 
