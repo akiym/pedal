@@ -4736,7 +4736,23 @@ class PEDACmd(object):
         text = ""
 
 
+        #
+        # Display relevant information in the left gutter about
+        # registers or important globals which point at the
+        # address.
+        #
         regs = peda.getregs()
+        syms = {'argc': '__libc_argc',
+                'argv': '__libc_argv',
+                'envp': '__environ',
+                'progname': '__progname'}
+
+        for k,v in syms.items():
+            s = gdb.lookup_global_symbol(v)
+            if s is not None:
+                regs[k] = int(s.value())
+
+
         regsList = {}
         regsColumnLen = 1
         #find any registers pointing to an address
