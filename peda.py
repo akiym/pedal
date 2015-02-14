@@ -1893,8 +1893,7 @@ class PEDA(object):
 
         if escape != 0:
             search = re.escape(search)
-
-        if isinstance(search, str):
+        elif isinstance(search, str):
             search = bytes(search)
 
         try:
