@@ -503,7 +503,13 @@ def format_reference_chain(chain):
         else:
             if v != "0x0":
                 s = hex2str(v)
-                if is_printable(s, "\x00"):
+                printable = False
+                if len(s) == 1:
+                    if 0x20 <= ord(s) and ord(s) <= 0x7e:
+                        printable = True
+                elif is_printable(s, "\x00"):
+                    printable = True
+                if printable:
                     text += "(%s)" % s
     return text
 
