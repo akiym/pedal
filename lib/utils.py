@@ -562,7 +562,7 @@ def format_disasm_code(code, nearby=None):
         target = 0
 
     for line in code.splitlines():
-        if ":" not in line: # not an assembly line
+        if ":" not in line or "Dump of assembler code" in line: # not an assembly line
             result += line + "\n"
         else:
             color = style = None
