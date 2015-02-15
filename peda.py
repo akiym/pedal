@@ -2576,7 +2576,7 @@ class PEDA(object):
         for line in code:
             if "bad" in line:
                 return []
-            (addr, code) = line.strip().split(":", 1)
+            (addr, code) = line.replace('=>', '').strip().split(":", 1)
             addr = to_int(addr.split()[0])
             result += [(addr, " ".join(code.strip().split()))]
             if "ret" in code:
