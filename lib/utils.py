@@ -371,7 +371,7 @@ def str2hex(str):
     result = binascii.hexlify(str)
     return result
 
-def hex2str(hexnum, intsize=4):
+def hex2str(hexnum, intsize=4, cut=False):
     """
     Convert a number in hex format to string
     """
@@ -383,7 +383,13 @@ def hex2str(hexnum, intsize=4):
     s = hexnum[2:]
     if len(s) % 2 != 0:
         s = "0" + s
-    result=binascii.unhexlify(s)[::-1]
+    result = binascii.unhexlify(s)[::-1]
+
+    if cut:
+        pos = result.find('\0')
+        if pos > 0:
+            result = result[0:pos]
+
     return result
 
 def int2hexstr(num, intsize=4):
@@ -515,7 +521,7 @@ def format_reference_chain(chain):
             text += "(%s)" % safe_escape(vn)
         else:
             if v != "0x0":
-                s = hex2str(v)
+                s = hex2str(v, cut=True)
                 if is_printable(s, "\x00"):
                     text += "(%s)" % repr(s)[1:-1]
     return text
