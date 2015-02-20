@@ -3352,6 +3352,71 @@ class PEDACmd(object):
 
         pager('\n'.join(lines))
 
+    def phexdump(self, *arg):
+        """
+        Display hex/ascii dump of data in memory
+        Usage:
+            MYNAME address (dump 16 bytes from address)
+            MYNAME address count
+            MYNAME address /count (dump "count" lines, 16-bytes each)
+        """
+        arg = list(arg)
+        if len(arg) == 1: arg.append('64')
+
+        (address, count) = normalize_argv(arg, 2)
+        linelen = 16 # display 16-bytes per line
+
+        if address is None:
+            self._missing_argument()
+
+        count = lineline if count is None else count
+        if isinstance(count,str):
+            count = count.strip('/')
+            count = linelen * to_int(count)
+
+        address &= ~0xf
+        bytes = peda.dumpmem(address, address+count)
+        if bytes is None:
+            warning_msg("cannot retrieve memory content")
+            return
+
+        lines = []
+        if isinstance(bytes, str):
+            bytes = map(ord, bytes)
+
+        ascii_char = lambda ch: chr(ch) if (ch) >= 0x20 and (ch) < 0x7e else '.'
+
+        def colorize_address(addr, step):
+            v, t, vn  = peda.examine_mem_value(addr)
+            if v:
+                return format_address(v.rjust(step * 3 - 1), t)
+            else:
+                return v
+
+        step = peda.intsize()
+        for offset in range(0, count, linelen):
+            buf        = bytes[offset:offset+linelen]
+            asciibytes = "".join(ascii_char(c) for c in buf)
+            coloraddr  = colorize_address(address+offset, step)
+            hexbytes   = []
+            for i in range(0, linelen, step):
+                value = ''.join(map(chr, buf[i:i+step]))
+                if len(value) == step:
+                    if step == 8:
+                        value = struct.unpack('<Q', value)[0]
+                    else:
+                        value = struct.unpack('<I', value)[0]
+                    if peda.is_address(value):
+                        addr = colorize_address(value, step)
+                        hexbytes.append(addr)
+                        continue
+                hexbytes.append(' '.join('%02x' % c for c in buf[i:i+step]).ljust(step * 3 - 1))
+            lines.append('%s │ %s │ %s' % (coloraddr, ' '.join(hexbytes), asciibytes))
+
+        lines.append(colorize_address(address+count, step))
+
+        pager('\n'.join(lines))
+
     def aslr(self, *arg):
         """
         Show/set ASLR setting of GDB
