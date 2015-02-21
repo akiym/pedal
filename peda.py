@@ -4373,6 +4373,17 @@ class PEDACmd(object):
 
             msg(text.rstrip())
             # stopped at other instructions
+        elif "cmp" in opcode:
+            text += peda.disassemble_around(pc, count)
+            msg(format_disasm_code(text, pc))
+            args = inst.split(None, 1)[1].split(',', 1)
+            for arg in args:
+                val = to_int(peda.parse_and_eval(arg))
+                chain = peda.examine_mem_reference(val)
+                if to_int(arg) is None:
+                    msg("%s: %s" % (arg, format_reference_chain(chain)))
+                else:
+                    msg("%s" % format_reference_chain(chain))
         else:
             text += peda.disassemble_around(pc, count)
             msg(format_disasm_code(text, pc))
