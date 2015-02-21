@@ -487,6 +487,19 @@ def format_reference_chain(chain):
     v = t = vn = None
     text = ""
 
+    def safe_escape(text):
+        if text.startswith('"'):
+            escaped = ''
+            for c in bytes(text.encode('utf-8')):
+                v = ord(c)
+                if v < 0x20 or v > 0x7e:
+                    escaped += '\\%o' % v
+                else:
+                    escaped += c
+            return escaped
+        else:
+            return text
+
     if not chain:
         text += "Cannot access memory address"
     else:
@@ -499,18 +512,12 @@ def format_reference_chain(chain):
             first = 0
 
         if vn:
-            text += "(%s)" % vn
+            text += "(%s)" % safe_escape(vn)
         else:
             if v != "0x0":
                 s = hex2str(v)
-                printable = False
-                if len(s) == 1:
-                    if 0x20 <= ord(s) and ord(s) <= 0x7e:
-                        printable = True
-                elif is_printable(s, "\x00"):
-                    printable = True
-                if printable:
-                    text += "(%s)" % s
+                if is_printable(s, "\x00"):
+                    text += "(%s)" % repr(s)[1:-1]
     return text
 
 def split_disasm_line(line):
