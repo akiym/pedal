@@ -13,6 +13,8 @@ PEDAL - Python Exploit Development Assistance for GDB Lite
   * Migrate from gdb-socat.py
   * Limitation for `examine_mem_reference`
 
+PEDAL has forked from https://github.com/zachriggle/peda
+
 ## Screenshot
 ![start](http://i.imgur.com/f22ZRro.png)
 
@@ -49,13 +51,11 @@ These are the standard features of PEDA:
   * `ropgadget` -- Get common ROP gadgets of binary or library
   * `ropsearch` -- Search for ROP gadgets in memory
   * `searchmem|find` -- Search for a pattern in memory; support regex search
-  * `shellcode` -- Generate or download common shellcodes.
-  * `skeleton` -- Generate python exploit code template
   * `vmmap` -- Get virtual mapping address ranges of section(s) in debugged process
   * `xormem` -- XOR a memory region with a key
 
 ## Installation
 
-    git clone https://github.com/zachriggle/peda.git ~/peda
-    echo "source ~/peda/peda.py" >> ~/.gdbinit
+    git clone https://github.com/akiym/pedal.git ~/pedal
+    echo "source ~/pedal/peda.py" >> ~/.gdbinit
     echo "DONE! debug your program with gdb and enjoy"
