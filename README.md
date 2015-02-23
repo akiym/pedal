@@ -1,7 +1,17 @@
-peda
-====
+pedal
+=====
 
-PEDA - Python Exploit Development Assistance for GDB
+PEDAL - Python Exploit Development Assistance for GDB Lite
+
+## Lite?:
+
+* Working in progress for improving peda
+  * Remove unused features
+  * Fix minor bugs
+* Features plan
+  * Support syscall arguments trace
+  * Migrate from gdb-socat.py
+  * Limitation for `examine_mem_reference`
 
 ## Screenshot
 ![start](http://i.imgur.com/f22ZRro.png)

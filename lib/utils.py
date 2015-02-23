@@ -371,7 +371,7 @@ def str2hex(str):
     result = binascii.hexlify(str)
     return result
 
-def hex2str(hexnum, intsize=4):
+def hex2str(hexnum, intsize=4, cut=False):
     """
     Convert a number in hex format to string
     """
@@ -383,7 +383,13 @@ def hex2str(hexnum, intsize=4):
     s = hexnum[2:]
     if len(s) % 2 != 0:
         s = "0" + s
-    result=binascii.unhexlify(s)[::-1]
+    result = binascii.unhexlify(s)[::-1]
+
+    if cut:
+        pos = result.find('\0')
+        if pos > 0:
+            result = result[0:pos]
+
     return result
 
 def int2hexstr(num, intsize=4):
@@ -487,6 +493,19 @@ def format_reference_chain(chain):
     v = t = vn = None
     text = ""
 
+    def safe_escape(text):
+        if text.startswith('"'):
+            escaped = ''
+            for c in bytes(text.encode('utf-8')):
+                v = ord(c)
+                if v < 0x20 or v > 0x7e:
+                    escaped += '\\%o' % v
+                else:
+                    escaped += c
+            return escaped
+        else:
+            return text
+
     if not chain:
         text += "Cannot access memory address"
     else:
@@ -499,12 +518,12 @@ def format_reference_chain(chain):
             first = 0
 
         if vn:
-            text += "(%s)" % vn
+            text += "(%s)" % safe_escape(vn)
         else:
             if v != "0x0":
-                s = hex2str(v)
+                s = hex2str(v, cut=True)
                 if is_printable(s, "\x00"):
-                    text += "(%s)" % s
+                    text += "(%s)" % repr(s)[1:-1]
     return text
 
 def split_disasm_line(line):
@@ -562,7 +581,7 @@ def format_disasm_code(code, nearby=None):
         target = 0
 
     for line in code.splitlines():
-        if ":" not in line: # not an assembly line
+        if ":" not in line or "Dump of assembler code" in line: # not an assembly line
             result += line + "\n"
         else:
             color = style = None

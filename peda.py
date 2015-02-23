@@ -12,6 +12,7 @@
 from __future__ import print_function
 import re
 import os
+import sys
 import shlex
 import string
 import io
@@ -22,7 +23,7 @@ import traceback
 import collections
 from codecs import encode, decode
 try:
-    import pickle as pickle
+    import cPickle as pickle
 except:
     import pickle
 
@@ -37,8 +38,6 @@ if os.path.islink(PEDAFILE):
     PEDAFILE = os.readlink(PEDAFILE)
 sys.path.append(os.path.dirname(PEDAFILE) + "/lib/")
 
-from skeleton import *
-from shellcode import *
 from utils import *
 import config
 from nasm import *
@@ -1405,17 +1404,27 @@ class PEDA(object):
                 return None
             headers = self.elfheader()
             binmap = []
-            hlist = [x for x in list(headers.items()) if x[1][2] == 'code']
-            hlist = sorted(hlist, key=lambda x:x[1][0])
-            binmap += [(hlist[0][1][0], hlist[-1][1][1], "rx-p", name)]
 
-            hlist = [x for x in list(headers.items()) if x[1][2] == 'rodata']
-            hlist = sorted(hlist, key=lambda x:x[1][0])
-            binmap += [(hlist[0][1][0], hlist[-1][1][1], "r--p", name)]
+            try:
+                hlist = [x for x in list(headers.items()) if x[1][2] == 'code']
+                hlist = sorted(hlist, key=lambda x:x[1][0])
+                binmap += [(hlist[0][1][0], hlist[-1][1][1], "rx-p", name)]
+            except Exception:
+                pass
 
-            hlist = [x for x in list(headers.items()) if x[1][2] == 'data']
-            hlist = sorted(hlist, key=lambda x:x[1][0])
-            binmap += [(hlist[0][1][0], hlist[-1][1][1], "rw-p", name)]
+            try:
+                hlist = [x for x in list(headers.items()) if x[1][2] == 'rodata']
+                hlist = sorted(hlist, key=lambda x:x[1][0])
+                binmap += [(hlist[0][1][0], hlist[-1][1][1], "r--p", name)]
+            except Exception:
+                pass
+
+            try:
+                hlist = [x for x in list(headers.items()) if x[1][2] == 'data']
+                hlist = sorted(hlist, key=lambda x:x[1][0])
+                binmap += [(hlist[0][1][0], hlist[-1][1][1], "rw-p", name)]
+            except Exception:
+                pass
 
             return binmap
 
@@ -1884,8 +1893,7 @@ class PEDA(object):
 
         if escape != 0:
             search = re.escape(search)
-
-        if isinstance(search, str):
+        elif isinstance(search, str):
             search = bytes(search)
 
         try:
@@ -2073,7 +2081,7 @@ class PEDA(object):
                 result = (to_hex(value), "data", out.split(":", 1)[1].strip())
 
         elif self.is_executable(value): # code/rodata address
-            if self.is_address(value, binmap):
+            if self.is_address(value, binmap) and None is gdb.solib_name(value):
                 headers = self.elfheader()
             else:
                 headers = self.elfheader_solib(mapname)
@@ -2092,7 +2100,7 @@ class PEDA(object):
                             result = (to_hex(value), "rodata", out.split(":", 1)[1].strip())
                         break
 
-                if result[0] is None: # not fall to any header section
+                else:
                     out = examine_data(value, bits)
                     result = (to_hex(value), "rodata", out.split(":", 1)[1].strip())
 
@@ -2568,7 +2576,7 @@ class PEDA(object):
         for line in code:
             if "bad" in line:
                 return []
-            (addr, code) = line.strip().split(":", 1)
+            (addr, code) = line.replace('=>', '').strip().split(":", 1)
             addr = to_int(addr.split()[0])
             result += [(addr, " ".join(code.strip().split()))]
             if "ret" in code:
@@ -3307,6 +3315,9 @@ class PEDACmd(object):
             MYNAME address count
             MYNAME address /count (dump "count" lines, 16-bytes each)
         """
+        arg = list(arg)
+        if len(arg) == 1: arg.append('64')
+
         (address, count) = normalize_argv(arg, 2)
         linelen = 16 # display 16-bytes per line
 
@@ -3338,6 +3349,71 @@ class PEDACmd(object):
 
         blueaddr   = blue(to_address(address+count))
         lines.append('0x%04x %s' % (count, blueaddr))
+
+        pager('\n'.join(lines))
+
+    def phexdump(self, *arg):
+        """
+        Display hex/ascii dump of data in memory
+        Usage:
+            MYNAME address (dump 16 bytes from address)
+            MYNAME address count
+            MYNAME address /count (dump "count" lines, 16-bytes each)
+        """
+        arg = list(arg)
+        if len(arg) == 1: arg.append('64')
+
+        (address, count) = normalize_argv(arg, 2)
+        linelen = 16 # display 16-bytes per line
+
+        if address is None:
+            self._missing_argument()
+
+        count = lineline if count is None else count
+        if isinstance(count,str):
+            count = count.strip('/')
+            count = linelen * to_int(count)
+
+        address &= ~0xf
+        bytes = peda.dumpmem(address, address+count)
+        if bytes is None:
+            warning_msg("cannot retrieve memory content")
+            return
+
+        lines = []
+        if isinstance(bytes, str):
+            bytes = map(ord, bytes)
+
+        ascii_char = lambda ch: chr(ch) if (ch) >= 0x20 and (ch) < 0x7e else '.'
+
+        def colorize_address(addr, step):
+            v, t, vn  = peda.examine_mem_value(addr)
+            if v:
+                return format_address(v.rjust(step * 3 - 1), t)
+            else:
+                return v
+
+        step = peda.intsize()
+        for offset in range(0, count, linelen):
+            buf        = bytes[offset:offset+linelen]
+            asciibytes = "".join(ascii_char(c) for c in buf)
+            coloraddr  = colorize_address(address+offset, step)
+            hexbytes   = []
+            for i in range(0, linelen, step):
+                value = ''.join(map(chr, buf[i:i+step]))
+                if len(value) == step:
+                    if step == 8:
+                        value = struct.unpack('<Q', value)[0]
+                    else:
+                        value = struct.unpack('<I', value)[0]
+                    if peda.is_address(value):
+                        addr = colorize_address(value, step)
+                        hexbytes.append(addr)
+                        continue
+                hexbytes.append(' '.join('%02x' % c for c in buf[i:i+step]).ljust(step * 3 - 1))
+            lines.append('%s │ %s │ %s' % (coloraddr, ' '.join(hexbytes), asciibytes))
+
+        lines.append(colorize_address(address+count, step))
 
         pager('\n'.join(lines))
 
@@ -3902,7 +3978,7 @@ class PEDACmd(object):
         if not started: # try ELF entry point or just "run" as the last resort
             elf_entry = peda.elfentry()
             if elf_entry:
-                out = peda.execute_redirect("tbreak %s" % elf_entry)
+                out = peda.execute_redirect("tbreak *%s" % elf_entry)
 
             peda.execute("run")
 
@@ -4278,7 +4354,7 @@ class PEDACmd(object):
                     if idx <= pc_idx:
                         text += jline + "\n"
                     else:
-                        text += " | %s\n" % jline
+                        text += " | %s\n" % jline.strip()
 
                 text = format_disasm_code(text, pc) + "\n"
                 text += " `->"
@@ -4297,6 +4373,17 @@ class PEDACmd(object):
 
             msg(text.rstrip())
             # stopped at other instructions
+        elif "cmp" in opcode:
+            text += peda.disassemble_around(pc, count)
+            msg(format_disasm_code(text, pc))
+            args = inst.split(None, 1)[1].split(',', 1)
+            for arg in args:
+                val = to_int(peda.parse_and_eval(arg))
+                chain = peda.examine_mem_reference(val)
+                if to_int(arg) is None:
+                    msg("%s: %s" % (arg, format_reference_chain(chain)))
+                else:
+                    msg("%s" % format_reference_chain(chain))
         else:
             text += peda.disassemble_around(pc, count)
             msg(format_disasm_code(text, pc))
@@ -4590,7 +4677,8 @@ class PEDACmd(object):
             MYNAME pattern mapname
         """
         (pattern, start, end) = normalize_argv(arg, 3)
-        (pattern, mapname) = normalize_argv(arg, 2)
+        if end is None:
+            (pattern, mapname) = normalize_argv(arg, 2)
         if pattern is None:
             self._missing_argument()
 
@@ -4712,7 +4800,22 @@ class PEDACmd(object):
         text = ""
 
 
+        #
+        # Display relevant information in the left gutter about
+        # registers or important globals which point at the
+        # address.
+        #
         regs = peda.getregs()
+        syms = {'argv': '__libc_argv',
+                'envp': '__environ',
+                'progname': '__progname'}
+
+        for k,v in syms.items():
+            s = gdb.lookup_global_symbol(v)
+            if s is not None:
+                regs[k] = s.value()
+
+
         regsList = {}
         regsColumnLen = 1
         #find any registers pointing to an address
@@ -5607,157 +5710,6 @@ class PEDACmd(object):
 
         return
 
-
-    ####################################
-    #   Payload/Shellcode Generation   #
-    ####################################
-    def skeleton(self, *arg):
-        """
-        Generate python exploit code template
-        Usage:
-            MYNAME type [file]
-                type = argv: local exploit via argument
-                type = env: local exploit via crafted environment (including NULL byte)
-                type = stdin: local exploit via stdin
-                type = remote: remote exploit via TCP socket
-        """
-        options = ["argv", "stdin", "env", "remote"]
-        (opt, outfile) = normalize_argv(arg, 2)
-        if opt not in options:
-            self._missing_argument()
-
-        pattern = cyclic_pattern(20000)
-        if opt == "argv":
-            code = ExploitSkeleton().skeleton_local_argv
-        if opt == "env":
-            code = ExploitSkeleton().skeleton_local_env
-        if opt == "stdin":
-            code = ExploitSkeleton().skeleton_local_stdin
-        if opt == "remote":
-            code = ExploitSkeleton().skeleton_remote_tcp
-
-        if outfile:
-            msg("Writing skeleton code to file \"%s\"" % outfile)
-            open(outfile, "w").write(bytes(code.strip("\n"), 'UTF-8'))
-            os.chmod(outfile, 0o755)
-            open("pattern.txt", "w").write(bytes(pattern, 'UTF-8'))
-        else:
-            msg(code)
-
-        return
-    skeleton.options = ["argv", "stdin", "env", "remote"]
-
-    def shellcode(self, *arg):
-        """
-        Generate or download common shellcodes.
-        Usage:
-            MYNAME generate [arch/]platform type [port] [host]
-            MYNAME search keyword (use % for any character wildcard)
-            MYNAME display shellcodeId (shellcodeId as appears in search results)
-
-            For generate option:
-                default port for bindport shellcode: 16706 (0x4142)
-                default host/port for connect back shellcode: 127.127.127.127/16706
-                supported arch: x86
-        """
-        def list_shellcode():
-            """
-            List available shellcodes
-            """
-            text = "Available shellcodes:\n"
-            for arch in SHELLCODES:
-                for platform in SHELLCODES[arch]:
-                    for sctype in SHELLCODES[arch][platform]:
-                        text += "    %s/%s %s\n" % (arch, platform, sctype)
-            msg(text)
-
-        """ Multiple variable name for different modes """
-        (mode, platform, sctype, port, host) = normalize_argv(arg, 5)
-        (mode, keyword) = normalize_argv(arg, 2)
-        (mode, shellcodeId) = normalize_argv(arg, 2)
-
-        if mode == "generate":
-            arch = "x86"
-            if platform and "/" in platform:
-                (arch, platform) = platform.split("/")
-
-            if platform not in SHELLCODES[arch] or not sctype:
-                list_shellcode()
-                return
-
-            try:
-                sc = Shellcode(arch, platform).shellcode(sctype, port, host)
-            except:
-                self._missing_argument()
-
-            if not sc:
-                msg("Unknown shellcode")
-                return
-
-            hexstr = to_hexstr(sc)
-            linelen = 16 # display 16-bytes per line
-            i = 0
-            text = "# %s/%s/%s: %d bytes\n" % (arch, platform, sctype, len(sc))
-            if sctype in ["bindport", "connect"]:
-                text += "# port=%s, host=%s\n" % (port if port else '16706', host if host else '127.127.127.127')
-            text += "shellcode = (\n"
-            while hexstr:
-                text += '    "%s"\n' % (hexstr[:linelen*4])
-                hexstr = hexstr[linelen*4:]
-                i += 1
-            text += ")"
-            msg(text)
-
-        # search shellcodes on shell-storm.org
-        elif mode == "search":
-            if keyword is None:
-                self._missing_argument()
-
-            res_dl = Shellcode().search(keyword)
-            if not res_dl:
-                msg("Shellcode not found or cannot retrieve the result")
-                return
-
-            msg("Found %d shellcodes" % len(res_dl))
-            msg("%s\t%s" %(blue("ScId"), blue("Title")))
-            text = ""
-            for data_d in res_dl:
-                text += "[%s]\t%s - %s\n" %(yellow(data_d['ScId']), data_d['ScArch'], data_d['ScTitle'])
-            pager(text)
-
-        # download shellcodes from shell-storm.org
-        elif mode == "display":
-            if to_int(shellcodeId) is None:
-                self._missing_argument()
-
-            res = Shellcode().display(shellcodeId)
-            if not res:
-                msg("Shellcode id not found or cannot retrieve the result")
-                return
-
-            msg(res)
-
-        else:
-            self._missing_argument()
-
-        return
-    shellcode.options = ["generate", "search", "display"]
-
-    def gennop(self, *arg):
-        """
-        Generate abitrary length NOP sled using given characters
-        Usage:
-            MYNAME size [chars]
-        """
-        (size, chars) = normalize_argv(arg, 2)
-        if size is None:
-            self._missing_argument()
-
-        nops = Shellcode.gennop(size, chars)
-        msg(repr(nops))
-
-        return
-
     def payload(self, *arg):
         """
         Generate various type of ROP payload using ret2plt
@@ -6070,6 +6022,5 @@ peda.execute("set backtrace past-main on")
 peda.execute("set step-mode on")
 peda.execute("set print pretty on")
 peda.execute("set width 0")
-peda.execute("set print elements 15")
 peda.execute("handle SIGALRM print nopass") # ignore SIGALRM
 peda.execute("handle SIGSEGV stop print nopass") # catch SIGSEGV
