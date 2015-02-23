@@ -12,6 +12,7 @@
 from __future__ import print_function
 import re
 import os
+import sys
 import shlex
 import string
 import io
@@ -22,7 +23,7 @@ import traceback
 import collections
 from codecs import encode, decode
 try:
-    import pickle as pickle
+    import cPickle as pickle
 except:
     import pickle
 
