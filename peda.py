@@ -4352,7 +4352,7 @@ class PEDACmd(object):
                     if idx <= pc_idx:
                         text += jline + "\n"
                     else:
-                        text += " | %s\n" % jline
+                        text += " | %s\n" % jline.strip()
 
                 text = format_disasm_code(text, pc) + "\n"
                 text += " `->"
