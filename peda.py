@@ -4274,7 +4274,7 @@ class PEDACmd(object):
                     text += "       %s\n" % line.strip()
                 text += red("JUMP is taken".rjust(79))
             else: # JUMP is NOT taken
-                text += format_disasm_code(peda.disassemble_around(pc, count, coloraddr=bpaddr), pc)
+                text += format_disasm_code(peda.disassemble_around(pc, count), pc, coloraddr=bpaddr)
                 text += "\n" + green("JUMP is NOT taken".rjust(79))
 
             msg(text.rstrip())
