@@ -4234,10 +4234,15 @@ class PEDACmd(object):
         prefix, addr, name, inst, comment = split_disasm_line(line)
         opcode = inst.split(None, 1)[0]
 
+        bpaddr = peda.get_breakpoints()
+        if bpaddr:
+            # address of break point has been enabled
+            bpaddr = map(lambda x: x[4], filter(lambda x: x[3], bpaddr))
+
         # stopped at function call
         if "call" in opcode:
             text += peda.disassemble_around(pc, count)
-            msg(format_disasm_code(text, pc))
+            msg(format_disasm_code(text, pc, coloraddr=bpaddr))
             self.dumpargs()
         # stopped at jump
         elif "j" in opcode:
@@ -4257,7 +4262,7 @@ class PEDACmd(object):
                     else:
                         text += " | %s\n" % jline.strip()
 
-                text = format_disasm_code(text, pc) + "\n"
+                text = format_disasm_code(text, pc, coloraddr=bpaddr) + "\n"
                 text += " `->"
                 code = peda.get_disasm(jumpto, count/2)
                 if not code:
@@ -4269,14 +4274,14 @@ class PEDACmd(object):
                     text += "       %s\n" % line.strip()
                 text += red("JUMP is taken".rjust(79))
             else: # JUMP is NOT taken
-                text += format_disasm_code(peda.disassemble_around(pc, count), pc)
+                text += format_disasm_code(peda.disassemble_around(pc, count, coloraddr=bpaddr), pc)
                 text += "\n" + green("JUMP is NOT taken".rjust(79))
 
             msg(text.rstrip())
             # stopped at other instructions
         elif opcode in ("mov", "lea", "cmp"):
             text += peda.disassemble_around(pc, count)
-            msg(format_disasm_code(text, pc))
+            msg(format_disasm_code(text, pc, coloraddr=bpaddr))
             args = inst.split(None, 1)[1].split(',', 1)
             for arg in args:
                 val = to_int(peda.parse_and_eval(arg))
@@ -4287,7 +4292,7 @@ class PEDACmd(object):
                     msg("%s" % format_reference_chain(chain))
         else:
             text += peda.disassemble_around(pc, count)
-            msg(format_disasm_code(text, pc))
+            msg(format_disasm_code(text, pc, coloraddr=bpaddr))
 
 
     def context_stack(self, *arg):

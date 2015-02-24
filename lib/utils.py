@@ -549,7 +549,7 @@ VULN_FUNCTIONS = [
     "recv", "tmp", "temp"
 ]
 
-def format_disasm_code(code, nearby=None):
+def format_disasm_code(code, nearby=None, coloraddr=None):
     """
     Format output of disassemble command with colors to highlight:
         - dangerous functions (rats/flawfinder)
@@ -592,6 +592,8 @@ def format_disasm_code(code, nearby=None):
                 return
 
             oaddr = re.search("\s*(0x[0-9a-fA-F]+)", line).group(1)
+            if coloraddr and addr in coloraddr:
+                oaddr = colorize(oaddr, "red", "underline")
 
             opcode = inst.split(None, 1)[0]
             for c in colorcodes:
