@@ -3275,7 +3275,6 @@ class PEDACmd(object):
             count = count.strip('/')
             count = linelen * to_int(count)
 
-        address &= ~0xf
         bytes = peda.dumpmem(address, address+count)
         if bytes is None:
             warning_msg("cannot retrieve memory content")
