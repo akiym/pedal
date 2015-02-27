@@ -4283,6 +4283,7 @@ class PEDACmd(object):
             msg(format_disasm_code(text, pc, coloraddr=bpaddr))
             args = inst.split(None, 1)[1].split(',', 1)
             for arg in args:
+                arg = re.sub(r'\s{2,}.+$', '', arg)
                 val = to_int(peda.parse_and_eval(arg))
                 chain = peda.examine_mem_reference(val)
                 if to_int(arg) is None:
