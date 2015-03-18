@@ -529,7 +529,12 @@ class PEDA(object):
             cmd = "t" + cmd
 
         if to_int(location) is not None:
-            return peda.execute("%s *0x%x" % (cmd, to_int(location)))
+            # if PIE binary, update with runtime address
+            elfbase = self.get_elfbase("binary")
+            addr = to_int(location)
+            if addr < elfbase:
+                addr += elfbase
+            return peda.execute("%s *0x%x" % (cmd, addr))
         else:
             return peda.execute("%s %s" % (cmd, location))
 
@@ -886,8 +891,7 @@ class PEDA(object):
 
         if not filename:
             return None
-        vmap = self.get_vmmap(filename)
-        elfbase = vmap[0][0] if vmap else 0
+        elfbase = self.get_elfbase(filename)
 
         if to_int(search) is not None:
             search = "%x" % to_int(search)
@@ -2223,8 +2227,7 @@ class PEDA(object):
         elfinfo = {}
         elfbase = 0
         if self.getpid():
-            binmap = self.get_vmmap("binary")
-            elfbase = binmap[0][0] if binmap else 0
+            elfbase = self.get_elfbase("binary")
 
         out = self.execute_redirect("maintenance info sections")
         if not out:
@@ -2276,8 +2279,7 @@ class PEDA(object):
         if ".plt" not in headers: # static binary
             return {}
 
-        binmap = self.get_vmmap("binary")
-        elfbase = binmap[0][0] if binmap else 0
+        elfbase = self.get_elfbase("binary")
 
         # get the .dynstr header
         headers = self.elfheader()
@@ -2397,8 +2399,7 @@ class PEDA(object):
             - dictionary of headers (name(String), value(Int)) (Dict)
         """
         elfinfo = {}
-        vmap = self.get_vmmap(filename)
-        elfbase = vmap[0][0] if vmap else 0
+        elfbase = self.get_elfbase(filename)
         out = execute_external_command("%s -W -S %s" % (config.READELF, filename))
         if not out:
             return {}
@@ -2478,8 +2479,7 @@ class PEDA(object):
         if solib is None:
             return headers
 
-        vmap = self.get_vmmap(solib)
-        elfbase = vmap[0][0] if vmap else 0
+        elfbase = self.get_elfbase(solib)
 
         for (start, end, hname, libname) in headers:
             if solib in libname:
@@ -2507,6 +2507,12 @@ class PEDA(object):
                     if name in k:
                         result[k] = v
         return result
+
+    @memoized
+    def get_elfbase(self, name=None):
+        vmap = self.get_vmmap(name)
+        elfbase = vmap[0][0] if vmap else 0
+        return elfbase
 
     def checksec(self, filename=None):
         """
@@ -3607,6 +3613,24 @@ class PEDACmd(object):
                     peda.execute("continue")
                 return
             time.sleep(0.5)
+        return
+
+    def breakpoint(self, *arg):
+        """
+        Set breakpoint
+        Usage:
+            MYNAME location [type]
+        """
+        (location,type,) = normalize_argv(arg, 2)
+        if location is None:
+            self._missing_argument()
+
+        if type == 't':
+            peda.set_breakpoint(location, temp=1)
+        elif type == 'h':
+            peda.set_breakpoint(location, hard=1)
+        else:
+            peda.set_breakpoint(location)
         return
 
     def pltbreak(self, *arg):
@@ -5895,6 +5919,7 @@ Alias("jtrace", "peda traceinst j")
 Alias("stack", "peda telescope $sp")
 Alias("viewmem", "peda telescope")
 Alias("reg", "peda xinfo register")
+Alias("b", "peda breakpoint")
 
 # misc gdb settings
 peda.execute("set confirm off")
