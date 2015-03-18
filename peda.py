@@ -1289,6 +1289,14 @@ class PEDA(object):
             return next_addr
         if opcode == "jnz" and flags["OF"]:
             return next_addr
+        if opcode == "js" and flags["SF"]:
+            return next_addr
+        if opcode == "jns" and not flags["SF"]:
+            return next_addr
+        if opcode == "jp" and flags["PF"]:
+            return next_addr
+        if opcode == "jnp" and not flags["PF"]:
+            return next_addr
 
         return None
 
