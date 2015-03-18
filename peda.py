@@ -4278,7 +4278,7 @@ class PEDACmd(object):
 
             msg(text.rstrip())
             # stopped at other instructions
-        elif opcode in ("mov", "lea", "cmp"):
+        elif 'mov' in opcode or 'cmp' in opcode or 'lea' in opcode:
             text += peda.disassemble_around(pc, count)
             msg(format_disasm_code(text, pc, coloraddr=bpaddr))
             args = inst.split(None, 1)[1].split(',', 1)
