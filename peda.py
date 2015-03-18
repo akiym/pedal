@@ -5248,6 +5248,29 @@ class PEDACmd(object):
 
         return
 
+
+    def socat(self, *arg):
+        """
+        Listen on port using socat ^..^
+        Usage:
+            MYNAME [port]
+
+        Requirements:
+            socat32, socat32_pie, socat64, socat64_pie
+        """
+
+        (port,) = normalize_argv(arg, 1)
+        port = to_int(port) if port else 4000
+
+        filename = peda.getfile()
+        _, bits = peda.getarch()
+        pie = peda.checksec(filename)['PIE']
+
+        gdb.execute('printf "socat: listening on :%d\n"' % port)
+        gdb.execute('exec-file socat%d%s' % (bits, '_pie' if pie else ''))
+        gdb.execute('run tcp-l:%d,reuseaddr exec:"%s"' % (port, filename))
+        gdb.execute('exec-file %s' % filename) # put back
+
     # cyclic_pattern()
     def pattern_create(self, *arg):
         """
