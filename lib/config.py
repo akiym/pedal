@@ -26,6 +26,7 @@ OPTIONS = {
     "session"   : ("peda-session-#FILENAME#.txt", "target file to save peda session"),
     "tracedepth": (0, "max depth for calls/instructions tracing, 0 means no limit"),
     "tracelog"  : ("peda-trace-#FILENAME#.txt", "target file to save tracecall output"),
+    "examdepth" : (5, "max depth for examine_mem_reference tracing, 0 means no limit"),
     "crashlog"  : ("peda-crashdump-#FILENAME#.txt", "target file to save crash dump of fuzzing"),
     "snapshot"  : ("peda-snapshot-#FILENAME#.raw", "target file to save crash dump of fuzzing"),
     "autosave"  : (False, "auto saving peda session, e.g: on|off"),

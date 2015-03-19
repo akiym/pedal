@@ -520,7 +520,7 @@ def format_reference_chain(chain):
         if vn:
             text += "(%s)" % safe_escape(vn)
         else:
-            if v != "0x0":
+            if v != "0x0" and v != "...":
                 s = hex2str(v, cut=True)
                 if is_printable(s, "\x00"):
                     text += "(%s)" % repr(s)[1:-1]

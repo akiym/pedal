@@ -2034,7 +2034,7 @@ class PEDA(object):
                 search = "0x" + encode(mem[i:i+step][::-1],'hex')
                 addr = to_int(search)
                 if self.is_address(addr):
-                    (v, t, vn) = self.examine_mem_value(addr)
+                    (v, t, vn, _) = self.examine_mem_value(addr)
                     if t != 'value':
                         if self.is_address(to_int(vn), belongto_ranges):
                             if (to_int(v), v) not in search_result:
@@ -2046,7 +2046,7 @@ class PEDA(object):
         return result
 
     @memoized
-    def examine_mem_value(self, value):
+    def examine_mem_value(self, value, depth=0):
         """
         Examine a value in memory for its type and reference
 
@@ -2066,7 +2066,7 @@ class PEDA(object):
 
         result = (None, None, None)
         if value is None:
-            return result
+            return result + (depth+1,)
 
         maps   = self.get_vmmap()
         binmap = self.get_vmmap("binary")
@@ -2074,7 +2074,7 @@ class PEDA(object):
         (arch, bits) = self.getarch()
         if not self.is_address(value): # a value
             result = (to_hex(value), "value", "")
-            return result
+            return result + (depth+1,)
         else:
             (_, _, _, mapname) = self.get_vmrange(value)
 
@@ -2133,7 +2133,7 @@ class PEDA(object):
             else:
                 result = (to_hex(value), "rodata", "MemError")
 
-        return result
+        return result + (depth+1,)
 
     @memoized
     def examine_mem_reference(self, value):
@@ -2146,9 +2146,16 @@ class PEDA(object):
         Returns:
             - list of tuple of (value(Int), type(String), next_value(Int))
         """
+        maxdepth = to_int(config.Option.get("examdepth"))
+        if not maxdepth:
+            maxdepth = 0xffffffff
         result = []
-        (v, t, vn) = self.examine_mem_value(value)
+        (v, t, vn, depth) = self.examine_mem_value(value)
         while vn is not None:
+            if depth > maxdepth:
+                result += [("...", "value", None)]
+                break
+
             result += [(v, t, vn)]
             if v == vn or to_int(v) == to_int(vn): # point to self
                 break
@@ -2156,7 +2163,7 @@ class PEDA(object):
                 break
             if to_int(vn) in [to_int(v) for (v, _, _) in result]: # point back to previous value
                 break
-            (v, t, vn) = self.examine_mem_value(to_int(vn))
+            (v, t, vn, depth) = self.examine_mem_value(to_int(vn), depth)
 
         return result
 
@@ -3301,7 +3308,7 @@ class PEDACmd(object):
         ascii_char = lambda ch: chr(ch) if (ch) >= 0x20 and (ch) < 0x7e else '.'
 
         def colorize_address(addr, step):
-            v, t, vn  = peda.examine_mem_value(addr)
+            (v, t, vn, _) = peda.examine_mem_value(addr)
             if v:
                 return format_address(v.rjust(step * 3 - 1), t)
             else:
