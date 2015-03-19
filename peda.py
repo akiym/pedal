@@ -776,14 +776,15 @@ class PEDA(object):
         """
         result = []
         backward = 64+16*count
+        addr = hex(address)[2:]
         for i in range(int(backward)):
             if self.getpid() and not self.is_address(address-backward+i):
                 continue
 
             code = self.execute_redirect("disassemble %s, %s" % (to_hex(address-backward+i), to_hex(address+1)))
-            if code and (hex(address)[2:]) in code:
+            if code and addr in code:
                 lines = code.strip().splitlines()[1:-1]
-                if len(lines) > count and "(bad)" not in " ".join(lines):
+                if len(lines) > count and "(bad)" not in "".join(lines[-count-1:]):
                     start = int(-1 * count - 1)
                     end = -1
                     for ii in range(start, end):
