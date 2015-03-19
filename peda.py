@@ -517,7 +517,7 @@ class PEDA(object):
     def set_breakpoint(self, location, temp=0, hard=0):
         """
         Wrapper for GDB break command
-            - location: target function or address (String ot Int)
+            - location: target function or address (String or Int)
 
         Returns:
             - True if can set breakpoint
