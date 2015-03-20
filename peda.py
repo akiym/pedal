@@ -2163,7 +2163,7 @@ class PEDA(object):
             if to_int(vn) is None:
                 break
             if to_int(vn) in [to_int(v) for (v, _, _) in result]: # point back to previous value
-                result[-1] = (hex(to_int(result[-1][2])), result[-1][1], None)
+                result += [(hex(to_int(result[-1][2])), result[-1][1], None)]
                 break
             (v, t, vn, depth) = self.examine_mem_value(to_int(vn), depth)
 
