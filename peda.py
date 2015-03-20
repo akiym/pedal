@@ -41,6 +41,7 @@ sys.path.append(os.path.dirname(PEDAFILE) + "/lib/")
 from utils import *
 import config
 from nasm import *
+from syscall import *
 
 ARM_REGS = ['sp'] + list(map(lambda x: "r%i" % x, range(32))) + ['cpsr']
 
@@ -3840,6 +3841,37 @@ class PEDACmd(object):
 
         return
 
+    def dumpsyscall(self, *arg):
+        """
+        Display arguments passed to a function when stopped at a call instruction
+        Usage:
+            MYNAME
+        """
+
+        regs = peda.getregs()
+        (arch, bits) = peda.getarch()
+
+        syscall_args = []
+        try:
+            if "i386" in arch:
+                reg = ["ebx", "ecx", "edx", "esi", "edi"]
+                syscall_num = regs["eax"]
+                syscall_args = Syscall["i386"][syscall_num]
+            if "64" in arch:
+                reg = ["rdi", "rsi", "rdx", "r10", "r8", "r9"]
+                syscall_num = regs["rax"]
+                syscall_args = Syscall["x86_64"][syscall_num]
+        except:
+            pass
+
+        msg("%s" % syscall_args[0] if syscall_args else "not implemented")
+        for (i, c) in enumerate(syscall_args[1:]):
+            name = syscall_args[i+1]
+            chain = peda.examine_mem_reference(regs[reg[i]])
+            msg("arg[%d] %s: %s" % (i, name, format_reference_chain(chain)))
+
+        return
+
     def xuntil(self, *arg):
         """
         Continue execution until an address or function
@@ -4273,6 +4305,7 @@ class PEDACmd(object):
 
         prefix, addr, name, inst, comment = split_disasm_line(line)
         opcode = inst.split(None, 1)[0]
+        args = inst.split(None, 1)[1].split(',', 1)
 
         bpaddr = peda.get_breakpoints()
         if bpaddr:
@@ -4280,7 +4313,11 @@ class PEDACmd(object):
             bpaddr = map(lambda x: x[4], filter(lambda x: x[3], bpaddr))
 
         # stopped at function call
-        if "call" in opcode:
+        if (opcode == "int" and args[0] == "0x80") or opcode == "syscall":
+            text += peda.disassemble_around(pc, count)
+            msg(format_disasm_code(text, pc))
+            self.dumpsyscall()
+        elif "call" in opcode:
             text += peda.disassemble_around(pc, count)
             msg(format_disasm_code(text, pc, coloraddr=bpaddr))
             self.dumpargs()
@@ -4322,7 +4359,6 @@ class PEDACmd(object):
         elif 'mov' in opcode or 'cmp' in opcode or 'lea' in opcode:
             text += peda.disassemble_around(pc, count)
             msg(format_disasm_code(text, pc, coloraddr=bpaddr))
-            args = inst.split(None, 1)[1].split(',', 1)
             for arg in args:
                 arg = re.sub(r'\s{2,}.+$', '', arg)
                 val = to_int(peda.parse_and_eval(arg))
