@@ -19,8 +19,6 @@ NDISASM      = "/usr/bin/ndisasm"
 # PEDA global options
 OPTIONS = {
     "badchars"  : ("", "bad characters to be filtered in payload/output, e.g: '\\x0a\\x00'"),
-    "pattern"   : (1, "pattern type, 0 = basic, 1 = extended, 2 = maximum"),
-    "p_charset" : ("", "custom charset for pattern_create"),
     "ansicolor" : (True, "enable/disable colorized output, e.g: on|off"),
     "pagesize"  : (0, "number of lines to display per page, 0 = disable paging"),
     "session"   : ("peda-session-#FILENAME#.txt", "target file to save peda session"),

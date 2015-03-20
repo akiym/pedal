@@ -49,7 +49,6 @@ These are the standard features of PEDA:
   * `elfsymbol` -- Get non-debugging symbol information from an ELF file
   * `lookup` -- Search for all addresses/references to addresses which belong to a memory range
   * `patch` -- Patch memory start at an address with string/hexstring/int
-  * `pattern` -- Generate, search, or write a cyclic pattern to memory
   * `procinfo` -- Display various info from /proc/pid/
   * `pshow` -- Show various PEDA options and other settings
   * `pset` -- Set various PEDA options and other settings
