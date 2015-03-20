@@ -4304,8 +4304,9 @@ class PEDACmd(object):
         text = ""
 
         prefix, addr, name, inst, comment = split_disasm_line(line)
-        opcode = inst.split(None, 1)[0]
-        args = inst.split(None, 1)[1].split(',', 1)
+        insts = inst.split(None, 1)
+        opcode = insts[0]
+        args = insts[1].split(',') if len(insts) == 2 else []
 
         bpaddr = peda.get_breakpoints()
         if bpaddr:
@@ -4313,7 +4314,7 @@ class PEDACmd(object):
             bpaddr = map(lambda x: x[4], filter(lambda x: x[3], bpaddr))
 
         # stopped at function call
-        if (opcode == "int" and args[0] == "0x80") or opcode == "syscall":
+        if (opcode == "int" and len(args) > 0 and args[0] == "0x80") or opcode == "syscall":
             text += peda.disassemble_around(pc, count)
             msg(format_disasm_code(text, pc))
             self.dumpsyscall()
