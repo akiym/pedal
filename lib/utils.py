@@ -289,7 +289,7 @@ def execute_external_command(command, cmd_input=None):
     if err and config.Option.get("debug"):
         warning_msg(err)
 
-    return decode(result, 'utf-8')
+    return result
 
 def is_printable(text, printables=""):
     """
