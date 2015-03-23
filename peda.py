@@ -2315,6 +2315,8 @@ class PEDA(object):
         if pattern:
             dynstrings = [s for s in dynstrings if re.search(pattern, s)]
 
+        binmap = peda.get_vmmap("binary")
+
         # get symname@plt info
         symbols = {}
         for symname in dynstrings:
