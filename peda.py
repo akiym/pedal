@@ -5721,7 +5721,7 @@ Alias("jtrace", "peda traceinst j")
 Alias("stack", "peda telescope $sp")
 Alias("viewmem", "peda telescope")
 Alias("reg", "peda xinfo register")
-Alias("b", "peda breakpoint")
+Alias("bb", "peda breakpoint")
 Alias("cs", "peda checksec")
 
 # misc gdb settings
