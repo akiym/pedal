@@ -44,12 +44,16 @@ from nasm import *
 from syscall import *
 
 ARM_REGS = ['sp'] + list(map(lambda x: "r%i" % x, range(32))) + ['cpsr']
+XMM_REGS = list(map(lambda x: "xmm%i" % x, range(15)))
+YMM_REGS = list(map(lambda x: "ymm%i" % x, range(15)))
 
 REGISTERS = {
     8 : ["al", "ah", "bl", "bh", "cl", "ch", "dl", "dh"],
     16: ["ax", "bx", "cx", "dx"],
     32: ["eax", "ebx", "ecx", "edx", "esi", "edi", "ebp", "esp", "eip"] + ARM_REGS,
-    64: ["rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp", "rip"] + ARM_REGS
+    64: ["rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp", "rip"] + ARM_REGS,
+    128: XMM_REGS,
+    256: YMM_REGS
 }
 
 ###########################################################################
