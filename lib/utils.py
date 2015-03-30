@@ -494,7 +494,7 @@ def format_reference_chain(chain):
     text = ""
 
     def safe_escape(text):
-        if text.startswith('"'):
+        if '"' in text:
             escaped = ''
             for c in bytes(text.encode('utf-8')):
                 v = ord(c)
