@@ -9,19 +9,20 @@ PEDAL - Python Exploit Development Assistance for GDB Lite
   * Remove unused features
   * Fix minor bugs
 * Features plan
-  * Support syscall arguments trace
-  * Limitation for `examine_mem_reference`
   * History for registers (go back to the past)
   * ncurses?
 
 PEDAL has forked from https://github.com/zachriggle/peda
 
-## New Features:
+## New Features and enhancements:
 
 * phexdump
 * socat
+* Better telescope
+* Syscall arguments trace
 
 ## Screenshot
+![pedal](http://i.imgur.com/73rmm6q.png)
 ![start](http://i.imgur.com/f22ZRro.png)
 
 ## Enhancements:
