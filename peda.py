@@ -3586,6 +3586,48 @@ class PEDACmd(object):
             error_msg("invalid $pc address or instruction count")
         return
 
+    def reattach(self, *arg):
+        """
+        detach and attach to parent process
+        Usage:
+            MYNAME [cmdname]
+        """
+        (name,) = normalize_argv(arg, 1)
+        if name is None:
+            filename = peda.getfile()
+            if filename is None:
+                warning_msg("please specify the file to debug or process name to attach")
+                return
+            else:
+                name = filename
+
+        # finish current process
+        peda.execute_redirect("continue")
+
+        cmd = "ps axo pid,command | grep %s | grep -v grep" % name
+        getpids = []
+        out = execute_external_command(cmd)
+        for line in out.splitlines():
+            getpids += [line.split()[0].strip()]
+
+        if len(getpids) > 1 or len(getpids) == 0:
+            warning_msg("failed to reattach")
+            return
+
+        pid = getpids[0]
+
+        peda.save_user_command("hook-stop")
+        msg("Reattaching to pid: %s, cmdname: %s" % (pid, name))
+        if peda.getpid():
+            peda.execute("detach")
+        out = peda.execute_redirect("attach %s" % pid)
+        msg(out)
+        out = peda.execute_redirect("file %s" % name) # reload symbol file
+        msg(out)
+        peda.restore_user_command("hook-stop")
+        peda.execute("continue")
+        return
+
     def waitfor(self, *arg):
         """
         Try to attach to new forked process; mimic "attach -waitfor"
