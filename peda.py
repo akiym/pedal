@@ -4030,6 +4030,16 @@ class PEDACmd(object):
             peda.execute("stop")
         return
 
+    def niuntil(self, *arg):
+        """
+        Step until next instruction
+        Usage:
+            MYNAME
+        """
+
+        address = peda.next_inst(peda.getreg("pc"))[0][0]
+        peda.execute("until *0x%x" % address)
+
     # wrapper for stepuntil("call")
     def nextcall(self, *arg):
         """
