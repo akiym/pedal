@@ -5779,6 +5779,8 @@ Alias("viewmem", "peda telescope")
 Alias("reg", "peda xinfo register")
 Alias("bb", "peda breakpoint")
 Alias("cs", "peda checksec")
+Alias("ph", "phexdump")
+Alias("cx", "context")
 
 # misc gdb settings
 peda.execute("set confirm off")
