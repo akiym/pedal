@@ -13,10 +13,6 @@ PEDAL is Lightweight and customized for ease of use [zachriggle's peda](https://
     - Better telescope
     - Syscall arguments trace
 
-## Python 3 Support
-
-PEDAL is no longer be supporting Python 2.
-
 ## Installation
 
     git clone https://github.com/akiym/pedal.git ~/pedal
