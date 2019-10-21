@@ -3309,14 +3309,12 @@ class PEDACmd(object):
             count = count.strip('/')
             count = linelen * to_int(count)
 
-        bytes = peda.dumpmem(address, address+count)
-        if bytes is None:
+        mem = peda.dumpmem(address, address+count)
+        if mem is None:
             warning_msg("cannot retrieve memory content")
             return
 
         lines = []
-        if isinstance(bytes, str):
-            bytes = map(ord, bytes)
 
         ascii_char = lambda ch: chr(ch) if (ch) >= 0x20 and (ch) < 0x7e else '.'
 
@@ -3329,12 +3327,12 @@ class PEDACmd(object):
 
         step = peda.intsize()
         for offset in range(0, count, linelen):
-            buf        = bytes[offset:offset+linelen]
+            buf        = mem[offset:offset+linelen]
             asciibytes = "".join(ascii_char(c) for c in buf)
             coloraddr  = colorize_address(address+offset, step)
             hexbytes   = []
             for i in range(0, linelen, step):
-                value = ''.join(map(chr, buf[i:i+step]))
+                value = buf[i:i+step]
                 if len(value) == step:
                     if step == 8:
                         value = struct.unpack('<Q', value)[0]
