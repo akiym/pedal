@@ -192,9 +192,9 @@ class message(object):
 
         if (isinstance(text, str) or isinstance(text, unicode)):
             text = text.replace("\x00", colorize(".", "red", None))
-            print(colorize(text, color, attrib), file=self.out)
+            print(colorize(text, color, attrib).encode('utf8'), file=self.out)
             if teefd:
-                print(colorize(text, color, attrib), file=teefd)
+                print(colorize(text.encode('utf8'), color, attrib), file=teefd)
         else:
             pprint.pprint(text, self.out)
             if teefd:
