@@ -44,7 +44,6 @@ sys.path.append(os.path.dirname(PEDAFILE) + "/lib/")
 
 from utils import *
 import config
-from nasm import *
 from syscall import *
 
 ARM_REGS = ['sp'] + list(map(lambda x: "r%i" % x, range(32))) + ['cpsr']
@@ -730,19 +729,6 @@ class PEDA(object):
             self.execute("source %s" % tmp.name)
         tmp.close()
         return result
-
-    @memoized
-    def assemble(self, asmcode, bits=None):
-        """
-        Assemble ASM instructions using NASM
-            - asmcode: input ASM instructions, multiple instructions are separated by ";" (String)
-
-        Returns:
-            - bin code (raw bytes)
-        """
-        if bits is None:
-            (arch, bits) = self.getarch()
-        return Nasm.assemble(asmcode, bits)
 
     def disassemble(self, *arg):
         """
@@ -2619,89 +2605,6 @@ class PEDA(object):
                 break
 
         return []
-
-    @memoized
-    def search_asm(self, start, end, asmcode, rop=0):
-        """
-        Search for ASM instructions in memory
-
-        Args:
-            - start: start address (Int)
-            - end: end address (Int)
-            - asmcode: assembly instruction (String)
-                + multiple instructions are separated by ";"
-                + wildcard ? supported, will be replaced by registers or multi-bytes
-
-        Returns:
-            - list of (address(Int), hexbyte(String))
-        """
-        wildcard = asmcode.count('?')
-        magic_bytes = ["0x00", "0xff", "0xdead", "0xdeadbeef", "0xdeadbeefdeadbeef"]
-
-        ops = [x for x in asmcode.split(';') if x]
-        def buildcode(code="", pos=0, depth=0):
-            if depth == wildcard and pos == len(ops):
-                yield code
-                return
-
-            c = ops[pos].count('?')
-            if c > 2: return
-            elif c == 0:
-                asm = self.assemble(ops[pos])
-                if asm:
-                    for code in buildcode(code + asm, pos+1, depth):
-                        yield code
-            else:
-                save = ops[pos]
-                for regs in list(REGISTERS.values()):
-                    for reg in regs:
-                        ops[pos] = save.replace("?", reg, 1)
-                        for asmcode_reg in buildcode(code, pos, depth+1):
-                            yield asmcode_reg
-                for byte in magic_bytes:
-                    ops[pos] = save.replace("?", byte, 1)
-                    for asmcode_mem in buildcode(code, pos, depth+1):
-                        yield asmcode_mem
-                ops[pos] = save
-
-        searches = []
-        for machine_code in buildcode():
-            search = re.escape(machine_code)
-            search = search.replace(re.escape("dead".decode('hex')),"..")\
-                .replace(re.escape("beef".decode('hex')),"..")\
-                .replace(re.escape("00".decode('hex')),".")\
-                .replace(re.escape("ff".decode('hex')),".")
-
-            if rop and 'ret' not in asmcode:
-                search = search + ".{0,24}\\xc3"
-            searches.append("%s" % (search))
-
-        search = "(?=(%s))" % ("|".join(searches))
-        candidates = self.searchmem(start, end, search)
-
-        if rop:
-            result = {}
-            for (a, v) in candidates:
-                gadget = self._verify_rop_gadget(a, a+len(v)//2 - 1)
-                # gadget format: [(address, asmcode), (address, asmcode), ...]
-                if gadget != []:
-                    blen = gadget[-1][0] - gadget[0][0] + 1
-                    bytes = v[:2*blen]
-                    asmcode_rs = "; ".join([c for _, c in gadget])
-                    if re.search(re.escape(asmcode).replace("\ ",".*").replace("\?",".*"), asmcode_rs)\
-                        and a not in result:
-                        result[a] = (bytes, asmcode_rs)
-            result = list(result.items())
-        else:
-            result = []
-            for (a, v) in candidates:
-                asmcode = self.execute_redirect("disassemble 0x%x, 0x%x" % (a, a+(len(v)//2)))
-                if asmcode:
-                    asmcode = "\n".join(asmcode.splitlines()[1:-1])
-                    matches = re.findall(".*:([^\n]*)", asmcode)
-                    result += [(a, (v, ";".join(matches).strip()))]
-
-        return result
 
     def dumprop(self, start, end, keyword=None, depth=5):
         """
@@ -5462,81 +5365,6 @@ class PEDACmd(object):
                 offset += len(k)
         else:
             msg("Not found")
-
-        return
-
-    def assemble(self, *arg):
-        """
-        On the fly assemble and execute instructions using NASM
-        Usage:
-            MYNAME [mode] [address]
-                mode: -b16 / -b32 / -b64
-        """
-        (mode, address) = normalize_argv(arg, 2)
-
-        exec_mode = 0
-        write_mode = 0
-        if to_int(mode) is not None:
-            address, mode = mode, None
-
-        (arch, bits) = peda.getarch()
-        if mode is None:
-            mode = bits
-        else:
-            mode = to_int(mode[2:])
-            if mode not in [16, 32, 64]:
-                self._missing_argument()
-
-        if self._is_running() and address == peda.getreg("pc"):
-            write_mode = exec_mode = 1
-
-        line = peda.execute_redirect("show write")
-        if line and "on" in line.split()[-1]:
-            write_mode = 1
-
-        if address is None or mode != bits:
-            write_mode = exec_mode = 0
-
-        if write_mode:
-            msg("Instruction will be written to 0x%x" % address)
-        else:
-            msg("Instructions will be written to stdout")
-
-        msg("Type instructions (NASM syntax), one or more per line separated by \";\"")
-        msg("End with a line saying just \"end\"")
-
-        if not write_mode:
-            address = 0xdeadbeef
-
-        inst_list = []
-        inst_code = ""
-        # fetch instruction loop
-        while True:
-            inst = input("iasm|0x%x> " % address)
-            if inst == "end":
-                break
-            if inst == "":
-                continue
-            bincode = peda.assemble(inst, mode)
-            size = len(bincode)
-            if size == 0:
-                continue
-            inst_list.append((size, bincode, inst))
-            if write_mode:
-                peda.writemem(address, bincode)
-            # execute assembled code
-            if exec_mode:
-                peda.execute("stepi %d" % (inst.count(";")+1))
-
-            address += size
-            inst_code += bincode
-            msg("hexify: \"%s\"" % to_hexstr(bincode))
-
-        text = Nasm.format_shellcode("".join([x[1] for x in inst_list]), mode)
-        if text:
-            msg("Assembled%s instructions:" % ("/Executed" if exec_mode else ""))
-            msg(text)
-            msg("hexify: \"%s\"" % to_hexstr(inst_code))
 
         return
 

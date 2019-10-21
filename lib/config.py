@@ -17,8 +17,6 @@ from __future__ import unicode_literals
 # external binaries, required for some commands
 READELF      = "/usr/bin/readelf"
 OBJDUMP      = "/usr/bin/objdump"
-NASM         = "/usr/bin/nasm"
-NDISASM      = "/usr/bin/ndisasm"
 
 # PEDA global options
 OPTIONS = {
