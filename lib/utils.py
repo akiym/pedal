@@ -288,12 +288,12 @@ def execute_external_command(command, cmd_input=None):
         - output of command (String)
     """
     result = ""
-    P = Popen([command], stdout=PIPE, stdin=PIPE, stderr=PIPE, shell=True, encoding='utf8')
+    P = Popen([command], stdout=PIPE, stdin=PIPE, stderr=PIPE, shell=True)
     (result, err) = P.communicate(cmd_input)
     if err and config.Option.get("debug"):
         warning_msg(err)
 
-    return result
+    return result.decode()
 
 def is_printable(text, printables=""):
     """
