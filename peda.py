@@ -3115,7 +3115,7 @@ class PEDACmd(object):
                         addr = colorize_address(value, step)
                         hexbytes.append(addr)
                         continue
-                hexbytes.append(' '.join('%02x' % c for c in buf[i:i+step]).ljust(step * 3 - 1))
+                hexbytes.append(' '.join('%02x' % c for c in bytearray(buf[i:i+step])).ljust(step * 3 - 1))
             lines.append('%s │ %s │ %s' % (coloraddr, ' '.join(hexbytes), asciibytes))
 
         lines.append(colorize_address(address+count, step))
