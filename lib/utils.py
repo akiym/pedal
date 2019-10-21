@@ -380,7 +380,7 @@ def hex2str(hexnum, intsize=4, cut=False):
     Convert a number in hex format to string
     """
 
-    if not isinstance(hexnum, str):
+    if isinstance(hexnum, int):
         nbits = intsize * 8
         hexnum = "0x%x" % ((hexnum + (1 << nbits)) % (1 << nbits))
 
