@@ -390,7 +390,7 @@ def hex2str(hexnum, intsize=4, cut=False):
     result = binascii.unhexlify(s)[::-1]
 
     if cut:
-        pos = result.find('\0')
+        pos = result.find(b'\0')
         if pos > 0:
             result = result[0:pos]
 
