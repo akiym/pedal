@@ -3325,9 +3325,21 @@ class PEDACmd(object):
             else:
                 return v
 
+        last_buf = None
+        skipping = False
         step = peda.intsize()
         for offset in range(0, count, linelen):
             buf        = mem[offset:offset+linelen]
+
+            if buf == last_buf:
+                if not skipping:
+                    skipping = True
+                    lines.append('...')
+                continue
+            else:
+                skipping = False
+                last_buf = buf
+
             asciibytes = "".join(ascii_char(c) for c in buf)
             coloraddr  = colorize_address(address+offset, step)
             hexbytes   = []
