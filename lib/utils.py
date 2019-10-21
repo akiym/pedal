@@ -288,7 +288,7 @@ def execute_external_command(command, cmd_input=None):
         - output of command (String)
     """
     result = ""
-    P = Popen([command], stdout=PIPE, stdin=PIPE, stderr=PIPE, shell=True)
+    P = Popen([command], stdout=PIPE, stdin=PIPE, stderr=PIPE, shell=True, encoding='utf8')
     (result, err) = P.communicate(cmd_input)
     if err and config.Option.get("debug"):
         warning_msg(err)
