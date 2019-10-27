@@ -2055,7 +2055,7 @@ class PEDA(object):
         def examine_data(value, bits=32):
             out = self.execute_redirect("x/%sx 0x%x" % ("g" if bits == 64 else "w", value))
             if out:
-                v = out.split(":")[1].strip()
+                v = split_back(out, ':', 1)[1].strip()
                 if is_printable(int2hexstr(to_int(v), bits//8)):
                     out = self.execute_redirect("x/s 0x%x" % value)
             return out

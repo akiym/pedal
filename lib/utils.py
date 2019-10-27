@@ -633,3 +633,6 @@ def format_disasm_code(code, nearby=None, coloraddr=None):
             result += line + "\n"
 
     return result.rstrip()
+
+def split_back(s, sep, maxsplit=-1):
+    return [ss[::-1] for ss in s[::-1].split(sep[::-1], maxsplit)][::-1]
