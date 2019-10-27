@@ -500,12 +500,11 @@ def format_reference_chain(chain):
     def safe_escape(text):
         if '"' in text:
             escaped = ''
-            for c in bytes(text.encode('utf-8')):
-                v = ord(c)
+            for v in bytearray(text.encode('utf-8')):
                 if v < 0x20 or v > 0x7e:
                     escaped += '\\%o' % v
                 else:
-                    escaped += c
+                    escaped += chr(v)
             return escaped
         else:
             return text
