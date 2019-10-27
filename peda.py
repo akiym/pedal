@@ -170,7 +170,7 @@ class PEDA(object):
             if not out:
                 return None
             else:
-                return out.split(":")[1].strip()
+                return split_back(out, ":", 1)[1].strip()
 
         else:
             out = self.execute_redirect("print %s" % exp)
@@ -783,7 +783,7 @@ class PEDA(object):
                     start = int(-1 * count - 1)
                     end = -1
                     for ii in range(start, end):
-                        (addr, code) = lines[ii].split(":", 1)
+                        (addr, code) = split_back(lines[ii], ":", 1)
                         addr = re.search("(0x[^ ]*)", addr).group(1)
                         result += [(to_int(addr), code)]
                     return result
@@ -804,7 +804,7 @@ class PEDA(object):
         if not out:
             return None
 
-        (addr, code) = out.split(":", 1)
+        (addr, code) = split_back(out, ":", 1)
         addr = re.search("(0x[^ ]*)", addr).group(1)
         addr = to_int(addr)
         code = code.strip()
@@ -830,7 +830,7 @@ class PEDA(object):
 
         lines = code.strip().splitlines()
         for i in range(1, count+1):
-            (addr, code) = lines[i].split(":", 1)
+            (addr, code) = split_back(lines[i], ":", 1)
             addr = re.search("(0x[^ ]*)", addr).group(1)
             result += [(to_int(addr), code)]
         return result
@@ -1683,7 +1683,7 @@ class PEDA(object):
         out = self.execute_redirect("x/%dbx 0x%x" % (size, address))
         if out:
             for line in out.splitlines():
-                bytes = line.split(":")[1].split()
+                bytes = split_back(line, ":", 1)[1].split()
                 mem += "".join([chr(int(c, 0)) for c in bytes])
 
         return mem
@@ -2078,15 +2078,15 @@ class PEDA(object):
         if self.is_stack(value):
             out = examine_data(value, bits)
             if out:
-                result = (to_hex(value), "stack", out.split(":", 1)[1].strip())
+                result = (to_hex(value), "stack", split_back(out, ":", 1)[1].strip())
         elif self.is_heap(value):
             out = examine_data(value, bits)
             if out:
-                result = (to_hex(value), "heap", out.split(":", 1)[1].strip())
+                result = (to_hex(value), "heap", split_back(out, ":", 1)[1].strip())
         elif self.is_writable(value): # writable data address
             out = examine_data(value, bits)
             if out:
-                result = (to_hex(value), "data", out.split(":", 1)[1].strip())
+                result = (to_hex(value), "data", split_back(out, ":", 1)[1].strip())
 
         elif self.is_executable(value): # code/rodata address
             if self.is_address(value, binmap) and None is gdb.solib_name(value):
@@ -2105,18 +2105,18 @@ class PEDA(object):
                             result = (to_hex(value), "code", m.group(1))
                         else: # rodata address
                             out = examine_data(value, bits)
-                            result = (to_hex(value), "rodata", out.split(":", 1)[1].strip())
+                            result = (to_hex(value), "rodata", split_back(out, ":", 1)[1].strip())
                         break
 
                 else:
                     out = examine_data(value, bits)
-                    result = (to_hex(value), "rodata", out.split(":", 1)[1].strip())
+                    result = (to_hex(value), "rodata", split_back(out, ":", 1)[1].strip())
 
             else: # not belong to any lib: [heap], [vdso], [vsyscall], etc
                 out = self.get_disasm(value)
                 if "(bad)" in out:
                     out = examine_data(value, bits)
-                    result = (to_hex(value), "rodata", out.split(":", 1)[1].strip())
+                    result = (to_hex(value), "rodata", split_back(out, ":", 1)[1].strip())
                 else:
                     p = re.compile(".*?0x[^ ]*?\s(.*)")
                     m = p.search(out)
@@ -2125,7 +2125,7 @@ class PEDA(object):
         else: # readonly data address
             out = examine_data(value, bits)
             if out:
-                result = (to_hex(value), "rodata", out.split(":", 1)[1].strip())
+                result = (to_hex(value), "rodata", split_back(out, ":", 1)[1].strip())
             else:
                 result = (to_hex(value), "rodata", "MemError")
 
@@ -3906,14 +3906,14 @@ class PEDACmd(object):
                 matched = False
                 for fn in fnames:
                     fn = fn.strip()
-                    if re.search(fn, code.split(":")[1]):
+                    if re.search(fn, split_back(code, ":", 1)[1]):
                         matched = True
                         break
             else:
                 matched = True
                 for fn in fnames:
                     fn = fn.strip()
-                    if re.search(fn, code.split(":")[1]):
+                    if re.search(fn, split_back(code, ":", 1)[1]):
                         matched = False
                         break
 
@@ -3988,7 +3988,7 @@ class PEDACmd(object):
 
             # special case for JUMP inst
             prev_code = ""
-            if re.search("j[^m]", code.split(":")[1].split()[0]):
+            if re.search("j[^m]", split_back(code, ":", 1)[1].split()[0]):
                 prev_insts = peda.prev_inst(peda.getreg("pc"))
                 if prev_insts:
                     prev_code = "0x%x:%s" % prev_insts[0]
@@ -3997,7 +3997,7 @@ class PEDACmd(object):
             text = "%s%s%s" % (" "*(prev_depth-1), " dep:%02d " % (prev_depth-1), code.strip())
             msg(text, teefd=logfd)
 
-            if re.search("call", code.split(":")[1].split()[0]):
+            if re.search("call", split_back(code, ":", 1)[1].split()[0]):
                 args = peda.get_function_args()
                 if args:
                     for (i, a) in enumerate(args):
@@ -4069,7 +4069,7 @@ class PEDACmd(object):
                     break
                 if peda.is_address(pc, binmap):
                     for k in keyword:
-                        if k in code.split(":")[1]:
+                        if k in split_back(code, ":", 1)[1]:
                             code = code.strip("=>").strip()
                             stats.setdefault(code, 0)
                             stats[code] += 1
