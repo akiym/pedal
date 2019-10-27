@@ -526,7 +526,12 @@ def format_reference_chain(chain):
             if v != "0x0" and v != "...":
                 s = hex2str(v, cut=True)
                 if is_printable(s, "\x00"):
-                    text += '("%s")' % repr(s)[1:-1]
+                    r = repr(s)
+                    if r.startswith("b'"):
+                        r = r[2:-1]
+                    else:
+                        r = r[1:-1]
+                    text += '("%s")' % r
     return text
 
 def split_disasm_line(line):
